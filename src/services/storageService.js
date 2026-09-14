@@ -1,7 +1,6 @@
 const KEYS = {
   FAVORITES: 'gonex_favorites_v2',
   HISTORY: 'gonex_history_v2',
-  SETTINGS: 'gonex_settings_v2'
 };
 
 export const storageService = {
@@ -20,10 +19,6 @@ export const storageService = {
     localStorage.setItem(KEYS.FAVORITES, JSON.stringify(favs));
     return favs;
   },
-  clearFavorites: () => {
-    localStorage.removeItem(KEYS.FAVORITES);
-    return [];
-  },
   getHistory: () => JSON.parse(localStorage.getItem(KEYS.HISTORY) || '[]'),
   addHistory: (item) => {
     const history = storageService.getHistory().filter(h => h.url !== item.url);
@@ -31,15 +26,4 @@ export const storageService = {
     localStorage.setItem(KEYS.HISTORY, JSON.stringify(updated));
     return updated;
   },
-  removeHistory: (url) => {
-    const history = storageService.getHistory().filter(h => h.url !== url);
-    localStorage.setItem(KEYS.HISTORY, JSON.stringify(history));
-    return history;
-  },
-  clearHistory: () => {
-    localStorage.removeItem(KEYS.HISTORY);
-    return [];
-  },
-  getSettings: () => JSON.parse(localStorage.getItem(KEYS.SETTINGS) || '{"theme":"dark"}'),
-  saveSettings: (settings) => localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings))
 };
