@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { searchService } from './services/searchService';
 
-// Monumentos con imágenes HD optimizadas para carga ultrarrápida
 const HISTORICAL_MONUMENTS = [
   {
     id: 'machu-picchu',
@@ -52,29 +51,30 @@ export function App() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeUrl, setActiveUrl] = useState(null);
-  const [rawUrl, setRawUrl] = useState('');
+  const [displayTitle, setDisplayTitle] = useState('');
 
-  // Procesado ultra rápido de URLs y YouTube
-  const processSmartUrl = (input) => {
-    let clean = input.trim();
-    setRawUrl(clean);
+  // Generador de URLs 100% compatibles con el marco de GoNex
+  const resolveEmbedUrl = (input) => {
+    const clean = input.trim();
+    setDisplayTitle(clean);
 
-    // 1. YouTube: video específico
-    const ytMatch = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|^v\/|embed\/))([\w-]{11})/);
-    if (ytMatch && ytMatch[1]) {
-      return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1`;
+    // 1. Si es un video específico de YouTube (watch?v=ID o youtu.be/ID)
+    const ytVideoMatch = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|^v\/|embed\/))([\w-]{11})/);
+    if (ytVideoMatch && ytVideoMatch[1]) {
+      return `https://www.youtube-nocookie.com/embed/${ytVideoMatch[1]}?autoplay=1`;
     }
 
-    // 2. YouTube: portada o búsquedas (Invidious ultrarrápido sin bloqueos)
-    if (clean.toLowerCase().includes('youtube')) {
-      return 'https://yewtu.be';
+    // 2. Si escribe youtube.com o busca en YouTube
+    if (clean.toLowerCase().includes('youtube.com') || clean.toLowerCase() === 'youtube') {
+      return `https://www.youtube-nocookie.com/embed?listType=search&list=musica+tendencias`;
     }
 
-    // 3. URLs generales
-    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
-      clean = `https://${clean}`;
+    // 3. Si ingresa una URL normal
+    if (clean.startsWith('http://') || clean.startsWith('https://')) {
+      return clean;
     }
-    return clean;
+    
+    return `https://${clean}`;
   };
 
   const handleSearch = async (e) => {
@@ -82,20 +82,20 @@ export function App() {
     const q = query.trim();
     if (!q) return;
 
-    // Si es una URL o incluye "youtube", abre INSTANTÁNEAMENTE sin latencia
+    // Detectar navegación directa o YouTube
     if (q.includes('.') || q.toLowerCase().includes('youtube')) {
-      const url = processSmartUrl(q);
-      setActiveUrl(url);
+      const embedUrl = resolveEmbedUrl(q);
+      setActiveUrl(embedUrl);
       setResults([]);
       return;
     }
 
-    // Si es una búsqueda de palabras clave
+    // Búsqueda de información
     setLoading(true);
     try {
       const data = await searchService.search(q);
       if (data.isDirectUrl) {
-        setActiveUrl(processSmartUrl(data.item.url));
+        setActiveUrl(resolveEmbedUrl(data.item.url));
       } else {
         setResults(data.results || []);
         setActiveUrl(null);
@@ -108,13 +108,14 @@ export function App() {
   };
 
   const openInApp = (url) => {
-    setActiveUrl(processSmartUrl(url));
+    const embedUrl = resolveEmbedUrl(url);
+    setActiveUrl(embedUrl);
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0b0f19', color: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0b0f19', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
       
-      {/* BARRA SUPERIOR GONEX */}
+      {/* BARRA SUPERIOR DE GONEX */}
       <header style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 20px', background: '#161e2e', borderBottom: '1px solid #1f293d' }}>
         <h1 
           onClick={() => { setActiveUrl(null); setResults([]); setQuery(''); }}
@@ -126,7 +127,7 @@ export function App() {
         {activeUrl && (
           <button 
             onClick={() => setActiveUrl(null)}
-            style={{ background: '#334155', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
+            style={{ background: '#334155', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
           >
             🏠 Inicio
           </button>
@@ -137,7 +138,7 @@ export function App() {
             type="text" 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Escribe youtube.com, wikipedia.org o busca algo..."
+            placeholder="Escribe youtube.com, wikipedia.org o busca un tema..."
             style={{ flex: 1, padding: '8px 14px', borderRadius: '8px', border: '1px solid #334155', background: '#0b0f19', color: '#fff', fontSize: '0.9rem', outline: 'none' }}
           />
           <button type="submit" style={{ padding: '8px 18px', borderRadius: '8px', background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
@@ -146,30 +147,35 @@ export function App() {
         </form>
       </header>
 
-      {/* ÁREA DE CONTENIDO */}
+      {/* VISTA PRINCIPAL */}
       <main style={{ flex: 1, position: 'relative', overflowY: 'auto' }}>
         
-        {/* VISTA NAVEGADOR INTERNO */}
+        {/* NAVEGADOR / REPRODUCTOR DENTRO DE GONEX */}
         {activeUrl ? (
           <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <div style={{ background: '#1e293b', padding: '6px 16px', fontSize: '0.8rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>🌐 Navegando en GoNex: <strong style={{ color: '#38bdf8' }}>{rawUrl || activeUrl}</strong></span>
-              <a href={rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`} target="_blank" rel="noreferrer" style={{ color: '#818cf8', textDecoration: 'none', fontWeight: 'bold' }}>
-                ¿Bloqueado por la página? Abrir fuera ↗
+              <span>🌐 Navegando en GoNex: <strong style={{ color: '#38bdf8' }}>{displayTitle}</strong></span>
+              <a 
+                href={displayTitle.startsWith('http') ? displayTitle : `https://${displayTitle}`} 
+                target="_blank" 
+                rel="noreferrer" 
+                style={{ color: '#818cf8', textDecoration: 'none', fontWeight: 'bold' }}
+              >
+                Abrir en pestaña externa ↗
               </a>
             </div>
             <iframe 
               src={activeUrl}
-              title="GoNex View"
-              style={{ width: '100%', flex: 1, border: 'none', background: '#0b0f19' }}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              title="GoNex Player Frame"
+              style={{ width: '100%', flex: 1, border: 'none', background: '#000' }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
           </div>
         ) : (
           <div style={{ padding: '1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
             
-            {/* VISTA RESULTADOS DE BÚSQUEDA */}
+            {/* RESULTADOS DE BÚSQUEDA */}
             {results.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                 <h2 style={{ fontSize: '1.1rem', color: '#94a3b8', margin: '0 0 0.5rem 0' }}>Resultados de búsqueda</h2>
@@ -187,11 +193,11 @@ export function App() {
               </div>
             ) : (
               
-              /* VISTA INICIO RÁPIDO Y MONUMENTOS */
+              /* PANTALLA DE INICIO MONUMENTOS 4K */
               <div>
                 <div style={{ textAlign: 'center', margin: '0.5rem 0 1.5rem 0' }}>
                   <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '0 0 0.4rem 0' }}>Explora el Mundo con GoNex</h2>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>Acceso directo instantáneo y sin demoras de carga.</p>
+                  <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>Acceso directo a contenido global sin bloqueos.</p>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.2rem' }}>
