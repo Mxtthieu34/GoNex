@@ -23,30 +23,78 @@ export function App() {
     setLoading(false);
   };
 
+  const openUrl = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif', background: '#0f172a', color: '#fff', minHeight: '100vh' }}>
-      <h1>🟣 GoNex Search</h1>
+      <h1 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span>🟣</span> GoNex Search
+      </h1>
+      
       <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', marginBottom: '2rem' }}>
         <input 
           type="text" 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Busca en la web o escribe una URL..."
-          style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #334155', background: '#1e293b', color: '#fff' }}
+          placeholder="Busca en la web o escribe una URL (ej: youtube.com)..."
+          style={{ flex: 1, padding: '14px', borderRadius: '8px', border: '1px solid #334155', background: '#1e293b', color: '#fff', fontSize: '1rem', outline: 'none' }}
         />
-        <button type="submit" style={{ padding: '12px 24px', borderRadius: '8px', background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer' }}>
+        <button type="submit" style={{ padding: '14px 28px', borderRadius: '8px', background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}>
           {loading ? 'Buscando...' : 'Buscar'}
         </button>
       </form>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {results.map((item) => (
-          <div key={item.id} style={{ background: '#1e293b', padding: '1rem', borderRadius: '8px' }}>
-            <a href={item.url} target="_blank" rel="noreferrer" style={{ color: '#818cf8', textDecoration: 'none', fontSize: '1.2rem', fontWeight: 'bold' }}>
-              {item.title}
-            </a>
-            <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: '0.5rem 0' }}>{item.description}</p>
-            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{item.domain}</span>
+          <div 
+            key={item.id} 
+            onClick={() => openUrl(item.url)}
+            style={{ 
+              background: '#1e293b', 
+              padding: '1.2rem', 
+              borderRadius: '10px', 
+              border: '1px solid #334155',
+              cursor: 'pointer',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.borderColor = '#6366f1'}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = '#334155'}
+          >
+            <div>
+              <h2 style={{ color: '#818cf8', fontSize: '1.25rem', marginBottom: '0.4rem' }}>
+                {item.title}
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
+                {item.description}
+              </p>
+              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                🌐 {item.domain}
+              </span>
+            </div>
+            
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                openUrl(item.url);
+              }}
+              style={{
+                background: '#6366f1',
+                color: '#fff',
+                border: 'none',
+                padding: '10px 18px',
+                borderRadius: '6px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                marginLeft: '1rem'
+              }}
+            >
+              Abrir sitio ↗
+            </button>
           </div>
         ))}
       </div>
