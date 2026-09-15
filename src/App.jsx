@@ -54,11 +54,22 @@ export function App() {
   const [activeUrl, setActiveUrl] = useState(null);
 
   const formatUrl = (input) => {
-    let clean = input.trim();
-    if (clean.includes('youtube.com/watch') || clean.includes('youtu.be/')) {
-      const match = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|^v\/|embed\/))([\w-]{11})/);
-      if (match && match[1]) return `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1`;
+    let clean = input.trim().toLowerCase();
+    
+    // Si se busca YouTube, redirigir a un visor 100% incrustable
+    if (clean === 'youtube.com' || clean === 'www.youtube.com' || clean === 'https://youtube.com' || clean === 'https://www.youtube.com') {
+      return 'https://yewtu.be';
     }
+
+    // Detectar si es un enlace o video directo de YouTube
+    if (clean.includes('youtube.com') || clean.includes('youtu.be')) {
+      const match = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|^v\/|embed\/))([\w-]{11})/);
+      if (match && match[1]) {
+        return `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1`;
+      }
+      return 'https://yewtu.be';
+    }
+
     if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
       return `https://${clean}`;
     }
@@ -111,7 +122,7 @@ export function App() {
             type="text" 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Escribe una URL (ej: wikipedia.org) o busca cualquier tema..."
+            placeholder="Escribe una URL (ej: youtube.com, wikipedia.org) o busca cualquier tema..."
             style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', border: '1px solid #334155', background: '#0b0f19', color: '#fff', fontSize: '0.95rem' }}
           />
           <button type="submit" style={{ padding: '10px 22px', borderRadius: '8px', background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
@@ -127,9 +138,9 @@ export function App() {
         {activeUrl ? (
           <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <div style={{ background: '#1e293b', padding: '8px 16px', fontSize: '0.85rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>🌐 Viendo en visor interno: <strong style={{ color: '#38bdf8' }}>{activeUrl}</strong></span>
+              <span>🌐 Navegando en GoNex: <strong style={{ color: '#38bdf8' }}>{activeUrl}</strong></span>
               <a href={activeUrl} target="_blank" rel="noreferrer" style={{ color: '#818cf8', textDecoration: 'none' }}>
-                ¿Página bloqueada por el sitio? Abrir fuera ↗
+                Abrir en pestaña externa ↗
               </a>
             </div>
             <iframe 
