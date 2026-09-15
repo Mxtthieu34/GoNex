@@ -1,48 +1,49 @@
 import React, { useState } from 'react';
 import { searchService } from './services/searchService';
 
+// Monumentos con imágenes HD optimizadas para carga ultrarrápida
 const HISTORICAL_MONUMENTS = [
   {
     id: 'machu-picchu',
     title: 'Machu Picchu',
     location: 'Cusco, Perú',
     url: 'https://es.wikipedia.org/wiki/Machu_Picchu',
-    image: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=1600&q=80'
+    image: 'https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=800&q=75'
   },
   {
     id: 'colosseum',
     title: 'Coliseo Romano',
     location: 'Roma, Italia',
     url: 'https://es.wikipedia.org/wiki/Coliseo',
-    image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1600&q=80'
+    image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=800&q=75'
   },
   {
     id: 'taj-mahal',
     title: 'Taj Mahal',
     location: 'Agra, India',
     url: 'https://es.wikipedia.org/wiki/Taj_Mahal',
-    image: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=1600&q=80'
+    image: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=75'
   },
   {
     id: 'chichen-itza',
     title: 'Chichén Itzá',
     location: 'Yucatán, México',
     url: 'https://es.wikipedia.org/wiki/Chich%C3%A9n_Itz%C3%A1',
-    image: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=1600&q=80'
+    image: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=800&q=75'
   },
   {
     id: 'pyramids-giza',
     title: 'Pirámides de Guiza',
     location: 'El Cairo, Egipto',
     url: 'https://es.wikipedia.org/wiki/Necr%C3%B3polis_de_Guiza',
-    image: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=1600&q=80'
+    image: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=800&q=75'
   },
   {
     id: 'great-wall',
     title: 'Gran Muralla China',
     location: 'Pekín, China',
     url: 'https://es.wikipedia.org/wiki/Gran_Muralla_China',
-    image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=1600&q=80'
+    image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=75'
   }
 ];
 
@@ -53,23 +54,23 @@ export function App() {
   const [activeUrl, setActiveUrl] = useState(null);
   const [rawUrl, setRawUrl] = useState('');
 
-  // Procesador inteligente de URLs para evitar bloqueos de Iframe
+  // Procesado ultra rápido de URLs y YouTube
   const processSmartUrl = (input) => {
     let clean = input.trim();
     setRawUrl(clean);
 
-    // 1. Detectar si el usuario busca YouTube o escribe la URL de YouTube
+    // 1. YouTube: video específico
     const ytMatch = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|^v\/|embed\/))([\w-]{11})/);
     if (ytMatch && ytMatch[1]) {
       return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1`;
     }
 
-    if (clean.toLowerCase().includes('youtube.com') || clean.toLowerCase() === 'youtube') {
-      // Abre el reproductor incrustado oficial de búsquedas de YouTube
-      return `https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(query || 'tendencias')}`;
+    // 2. YouTube: portada o búsquedas (Invidious ultrarrápido sin bloqueos)
+    if (clean.toLowerCase().includes('youtube')) {
+      return 'https://yewtu.be';
     }
 
-    // 2. Formatear URLs estándar
+    // 3. URLs generales
     if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
       clean = `https://${clean}`;
     }
@@ -78,41 +79,46 @@ export function App() {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    const q = query.trim();
+    if (!q) return;
 
-    setLoading(true);
-    const formattedUrl = processSmartUrl(query);
-    
-    // Si es un sitio directo (URL o YouTube) abrir en visor
-    if (query.includes('.') || query.toLowerCase().includes('youtube')) {
-      setActiveUrl(formattedUrl);
+    // Si es una URL o incluye "youtube", abre INSTANTÁNEAMENTE sin latencia
+    if (q.includes('.') || q.toLowerCase().includes('youtube')) {
+      const url = processSmartUrl(q);
+      setActiveUrl(url);
       setResults([]);
-    } else {
-      // Si es una búsqueda general, obtener resultados
-      const data = await searchService.search(query);
+      return;
+    }
+
+    // Si es una búsqueda de palabras clave
+    setLoading(true);
+    try {
+      const data = await searchService.search(q);
       if (data.isDirectUrl) {
         setActiveUrl(processSmartUrl(data.item.url));
       } else {
-        setResults(data.results);
+        setResults(data.results || []);
         setActiveUrl(null);
       }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const openInApp = (url) => {
-    const formatted = processSmartUrl(url);
-    setActiveUrl(formatted);
+    setActiveUrl(processSmartUrl(url));
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0b0f19', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0b0f19', color: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
       {/* BARRA SUPERIOR GONEX */}
-      <header style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 24px', background: '#161e2e', borderBottom: '1px solid #1f293d' }}>
+      <header style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 20px', background: '#161e2e', borderBottom: '1px solid #1f293d' }}>
         <h1 
           onClick={() => { setActiveUrl(null); setResults([]); setQuery(''); }}
-          style={{ fontSize: '1.3rem', cursor: 'pointer', margin: 0, fontWeight: 'bold', letterSpacing: '0.5px', color: '#818cf8' }}
+          style={{ fontSize: '1.2rem', cursor: 'pointer', margin: 0, fontWeight: 'bold', color: '#818cf8', userSelect: 'none' }}
         >
           🟣 GoNex
         </h1>
@@ -120,7 +126,7 @@ export function App() {
         {activeUrl && (
           <button 
             onClick={() => setActiveUrl(null)}
-            style={{ background: '#334155', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
+            style={{ background: '#334155', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
           >
             🏠 Inicio
           </button>
@@ -131,11 +137,11 @@ export function App() {
             type="text" 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Escribe una URL (ej: youtube.com, wikipedia.org) o busca cualquier tema..."
-            style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', border: '1px solid #334155', background: '#0b0f19', color: '#fff', fontSize: '0.95rem' }}
+            placeholder="Escribe youtube.com, wikipedia.org o busca algo..."
+            style={{ flex: 1, padding: '8px 14px', borderRadius: '8px', border: '1px solid #334155', background: '#0b0f19', color: '#fff', fontSize: '0.9rem', outline: 'none' }}
           />
-          <button type="submit" style={{ padding: '10px 22px', borderRadius: '8px', background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
-            {loading ? 'Cargando...' : 'Navegar'}
+          <button type="submit" style={{ padding: '8px 18px', borderRadius: '8px', background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+            {loading ? '...' : 'Ir'}
           </button>
         </form>
       </header>
@@ -143,70 +149,70 @@ export function App() {
       {/* ÁREA DE CONTENIDO */}
       <main style={{ flex: 1, position: 'relative', overflowY: 'auto' }}>
         
-        {/* VISTA 1: NAVEGADOR O REPRODUCTOR */}
+        {/* VISTA NAVEGADOR INTERNO */}
         {activeUrl ? (
           <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ background: '#1e293b', padding: '8px 16px', fontSize: '0.85rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>🌐 Viendo en GoNex Browser: <strong style={{ color: '#38bdf8' }}>{rawUrl || activeUrl}</strong></span>
+            <div style={{ background: '#1e293b', padding: '6px 16px', fontSize: '0.8rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>🌐 Navegando en GoNex: <strong style={{ color: '#38bdf8' }}>{rawUrl || activeUrl}</strong></span>
               <a href={rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`} target="_blank" rel="noreferrer" style={{ color: '#818cf8', textDecoration: 'none', fontWeight: 'bold' }}>
-                Abrir en pestaña externa ↗
+                ¿Bloqueado por la página? Abrir fuera ↗
               </a>
             </div>
             <iframe 
               src={activeUrl}
               title="GoNex View"
-              style={{ width: '100%', flex: 1, border: 'none', background: '#ffffff' }}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              style={{ width: '100%', flex: 1, border: 'none', background: '#0b0f19' }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
           </div>
         ) : (
-          <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ padding: '1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
             
-            {/* VISTA 2: RESULTADOS DE BÚSQUEDA */}
+            {/* VISTA RESULTADOS DE BÚSQUEDA */}
             {results.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <h2 style={{ fontSize: '1.2rem', color: '#94a3b8', marginBottom: '0.5rem' }}>Resultados de búsqueda</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <h2 style={{ fontSize: '1.1rem', color: '#94a3b8', margin: '0 0 0.5rem 0' }}>Resultados de búsqueda</h2>
                 {results.map((item) => (
                   <div 
                     key={item.id}
                     onClick={() => openInApp(item.url)}
-                    style={{ background: '#161e2e', padding: '1.2rem', borderRadius: '12px', border: '1px solid #1f293d', cursor: 'pointer' }}
+                    style={{ background: '#161e2e', padding: '1rem', borderRadius: '10px', border: '1px solid #1f293d', cursor: 'pointer' }}
                   >
-                    <h3 style={{ color: '#818cf8', margin: '0 0 0.4rem 0', fontSize: '1.15rem' }}>{item.title}</h3>
-                    <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>{item.description}</p>
-                    <span style={{ fontSize: '0.8rem', color: '#64748b' }}>🌐 {item.domain}</span>
+                    <h3 style={{ color: '#818cf8', margin: '0 0 0.3rem 0', fontSize: '1.05rem' }}>{item.title}</h3>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 0.4rem 0' }}>{item.description}</p>
+                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>🌐 {item.domain}</span>
                   </div>
                 ))}
               </div>
             ) : (
               
-              /* VISTA 3: PANTALLA DE INICIO CON MONUMENTOS HISTÓRICOS 4K */
+              /* VISTA INICIO RÁPIDO Y MONUMENTOS */
               <div>
-                <div style={{ textAlign: 'center', margin: '1rem 0 2.5rem 0' }}>
-                  <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Explora el Mundo con GoNex</h2>
-                  <p style={{ color: '#94a3b8' }}>Selecciona un monumento histórico para navegar y conocer su historia en vivo.</p>
+                <div style={{ textAlign: 'center', margin: '0.5rem 0 1.5rem 0' }}>
+                  <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '0 0 0.4rem 0' }}>Explora el Mundo con GoNex</h2>
+                  <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>Acceso directo instantáneo y sin demoras de carga.</p>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.2rem' }}>
                   {HISTORICAL_MONUMENTS.map((item) => (
                     <div 
                       key={item.id}
                       onClick={() => openInApp(item.url)}
                       style={{
-                        height: '240px',
-                        borderRadius: '16px',
+                        height: '200px',
+                        borderRadius: '12px',
                         overflow: 'hidden',
                         position: 'relative',
                         cursor: 'pointer',
                         backgroundImage: `url(${item.image})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                        transition: 'transform 0.2s ease'
+                        boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
+                        transition: 'transform 0.15s ease'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                     >
                       <div style={{
                         position: 'absolute',
@@ -215,18 +221,18 @@ export function App() {
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'flex-end',
-                        padding: '1.2rem'
+                        padding: '1rem'
                       }}>
-                        <span style={{ fontSize: '0.8rem', color: '#38bdf8', fontWeight: 'bold', textTransform: 'uppercase' }}>{item.location}</span>
-                        <h3 style={{ fontSize: '1.4rem', margin: '0.2rem 0 0.5rem 0', color: '#fff' }}>{item.title}</h3>
+                        <span style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 'bold', textTransform: 'uppercase' }}>{item.location}</span>
+                        <h3 style={{ fontSize: '1.2rem', margin: '0.1rem 0 0.4rem 0', color: '#fff' }}>{item.title}</h3>
                         <button style={{
                           alignSelf: 'flex-start',
                           background: '#6366f1',
                           color: '#fff',
                           border: 'none',
-                          padding: '6px 14px',
+                          padding: '5px 12px',
                           borderRadius: '6px',
-                          fontSize: '0.85rem',
+                          fontSize: '0.8rem',
                           fontWeight: 'bold',
                           cursor: 'pointer'
                         }}>
