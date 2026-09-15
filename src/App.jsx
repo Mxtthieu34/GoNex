@@ -8,7 +8,7 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [activeUrl, setActiveUrl] = useState(null);
 
-  // Convierte enlaces (especialmente de YouTube) a formato compatible para reproducir dentro de GoNex
+  // Convierte enlaces para que funcionen dentro del visor de GoNex
   const getEmbeddableUrl = (url) => {
     if (!url) return '';
     let cleanUrl = url.trim();
@@ -16,16 +16,15 @@ export function App() {
       cleanUrl = `https://${cleanUrl}`;
     }
 
-    // Adaptación especial para YouTube (evita el bloqueo de iframe)
-    if (cleanUrl.includes('youtube.com/watch') || cleanUrl.includes('youtu.be/')) {
-      const match = cleanUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|^v\/|embed\/))([\w-]{11})/);
-      if (match && match[1]) {
-        return `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1`;
-      }
+    // 1. Si es un video específico de YouTube (watch?v=ID)
+    const videoMatch = cleanUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|^v\/|embed\/))([\w-]{11})/);
+    if (videoMatch && videoMatch[1]) {
+      return `https://www.youtube-nocookie.com/embed/${videoMatch[1]}?autoplay=1`;
     }
-    
-    if (cleanUrl.includes('youtube.com')) {
-      return 'https://www.youtube-nocookie.com/embed/';
+
+    // 2. Si es la portada o búsqueda de YouTube, usa la interfaz Invidious (sin bloqueos de iframe)
+    if (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) {
+      return 'https://yewtu.be';
     }
 
     return cleanUrl;
@@ -57,7 +56,7 @@ export function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0f172a', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      {/* BARRA SUPERIOR DEL NAVEGADOR GONEX */}
+      {/* BARRA SUPERIOR DE GONEX */}
       <header style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 20px', background: '#1e293b', borderBottom: '1px solid #334155' }}>
         <h1 
           onClick={() => { setActiveUrl(null); setResults([]); setQuery(''); }}
@@ -69,7 +68,7 @@ export function App() {
         {activeUrl && (
           <button 
             onClick={() => setActiveUrl(null)}
-            style={{ background: '#334155', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer' }}
+            style={{ background: '#334155', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
           >
             ⬅ Volver a Búsqueda
           </button>
@@ -80,7 +79,7 @@ export function App() {
             type="text" 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Escribe una URL (ej: youtube.com) o busca algo..."
+            placeholder="Escribe youtube.com, una URL o busca algo..."
             style={{ flex: 1, padding: '10px 14px', borderRadius: '6px', border: '1px solid #475569', background: '#0f172a', color: '#fff', fontSize: '0.95rem' }}
           />
           <button type="submit" style={{ padding: '10px 20px', borderRadius: '6px', background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
@@ -89,14 +88,12 @@ export function App() {
         </form>
       </header>
 
-      {/* ÁREA DE CONTENIDO PRINCIPAL */}
+      {/* VISTA DEL NAVEGADOR O RESULTADOS */}
       <main style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        
-        {/* OP CION A: NAVEGADOR INTEGRADO (Abre la web DENTRO de GoNex) */}
         {activeUrl ? (
           <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <div style={{ background: '#0f172a', padding: '6px 16px', fontSize: '0.85rem', color: '#94a3b8', borderBottom: '1px solid #1e293b' }}>
-              Navegando dentro de GoNex: <span style={{ color: '#818cf8' }}>{activeUrl}</span>
+              Navegando en GoNex: <span style={{ color: '#818cf8' }}>{activeUrl}</span>
             </div>
             <iframe 
               src={activeUrl}
@@ -107,12 +104,11 @@ export function App() {
             />
           </div>
         ) : (
-          /* OPCION B: LISTA DE RESULTADOS DE BÚSQUEDA */
           <div style={{ padding: '2rem', overflowY: 'auto', height: '100%' }}>
             {results.length === 0 && !loading && (
               <div style={{ textAlign: 'center', marginTop: '4rem', color: '#64748b' }}>
                 <h2>Bienvenido a GoNex Browser</h2>
-                <p>Escribe cualquier sitio web arriba o realiza una búsqueda para empezar a navegar.</p>
+                <p>Prueba buscando o escribiendo <strong>youtube.com</strong> arriba.</p>
               </div>
             )}
 
